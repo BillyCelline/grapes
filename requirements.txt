@@ -1,12 +1,9 @@
-math
 numpy
 pandas
 hvplot.pandas
 panel
-datetime
 statsmodels.api
 scipy
 numpy
 sklearn
 holoviews
-warnings
