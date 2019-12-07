@@ -1,8 +1,8 @@
 numpy
 pandas
-hvplot.pandas
+hvplot
 panel
-statsmodels.api
+statsmodels
 scipy
 numpy
 sklearn
