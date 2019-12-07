@@ -1,1 +1,1 @@
-web: panel serve --port=$PORT --address=0.0.0.0 --allow-websocket-origin=grapes.herokuapp.com --use-xheaders test.py
+web: panel serve --address="0.0.0.0" --port=$PORT test.py --allow-websocket-origin=app-name.herokuapp.com
