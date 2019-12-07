@@ -592,23 +592,6 @@ def fit_models(design):
 
 X_train, X_test, y_train, y_test, models, thingers = fit_models(blop)
 
-def get_feature_chart(models):
-
-    rfc_ft = models[3].feature_importances_
-    gbm_ft = models[0].feature_importances_
-
-    hist1 = hv.Bars([(x_fields[i], rfc_ft[i]) for i in range(len(rfc_ft))], \
-                    label='Random Forest').opts(width=500, height=500)
-    hist2 = hv.Bars([(x_fields[i], gbm_ft[i]) for i in range(len(gbm_ft))], \
-                    label='Gradient Boosting').opts(width=500, height=500)
-
-    both = (hist1 * hist2).relabel('Feature Importance').opts(xlabel='Features', \
-            ylabel='Importance', legend_position='top_right'). \
-            redim(x=hv.Dimension('x', range=(-0.01, 1)),y=hv.Dimension('y', range=(-0.01, 1)))
-
-    feature_chart = both.opts(opts.Bars(alpha=0.5), opts(invert_axes=True))
-    
-    return feature_chart
 
 def get_sens_spec(thingers):
     
@@ -635,84 +618,6 @@ def get_sens_spec(thingers):
     
     return sens, spec, both
 
-def get_rocstuff(clf, X_test, y_test):
-    
-    y_pred_proba = clf.predict_proba(X_test)[::,1]
-    fpr, tpr, _ = roc_curve(y_test,  y_pred_proba)
-    auc = roc_auc_score(y_test, y_pred_proba)
-    return (fpr, tpr), auc
-
-def get_rochart(models, X_test, y_test):
-
-    roc = [get_rocstuff(i, X_test, y_test) for i in models]
-    labels = ['Gradient Boosting | AUC: ', 'Logistic Regression | AUC: ',
-             'Naive Bayes | AUC: ', 'Random Forest | AUC: ']
-
-    combined = (hv.Curve(roc[0][0],label=labels[0]+str(round(roc[0][1],2)))*
-                hv.Curve(roc[1][0],label=labels[1]+str(round(roc[1][1],2)))*
-                hv.Curve(roc[2][0],label=labels[2]+str(round(roc[2][1],2)))*
-                hv.Curve(roc[3][0],label=labels[3]+str(round(roc[3][1],2)))*
-                hv.Curve(np.array([0,1]),label='No Predictive Value').opts(color='black')). \
-                relabel('ROC Curves').opts(xlabel='1 - Specificity', ylabel='Sensitivity', legend_position='bottom_right'). \
-                redim(x=hv.Dimension('x', range=(-0.01, 1.01)),y=hv.Dimension('y', range=(-0.01, 1.01)))
-
-    combined = combined.opts(width=500,height=500)
-    
-    return combined
-
-def get_prcstuff(clf, X_test, y_test):
-    if hasattr(clf, "predict_proba"):
-        y_score = clf.predict_proba(X_test)[:, 1]
-    else:  # use decision function
-        y_score = clf.decision_function(X_test)
-        y_score = (y_score - y_score.min()) / (y_score.max() - y_score.min())
-    precision, recall, _ = precision_recall_curve(y_test, y_score)
-    return (precision, recall)
-
-def get_prchart(models, X_test, y_test):
-    prc = [get_prcstuff(i, X_test, y_test) for i in models]
-    labels = ['Gradient Boosting', 'Logistic Regression','Naive Bayes', 'Random Forest']
-
-    combined = (hv.Curve(prc[0],label=labels[0])*
-                hv.Curve(prc[1],label=labels[1])*
-                hv.Curve(prc[2],label=labels[2])*
-                hv.Curve(prc[3],label=labels[3])*
-                hv.Curve(np.array([1,0]),label='No Predictive Value').opts(color='black')).\
-                relabel('Precision-Recall Curves').opts(
-                xlabel='Recall', ylabel='Precision', legend_position='bottom_left').\
-                redim(x=hv.Dimension('x', range=(-0.01, 1.01)),y=hv.Dimension('y', range=(-0.01, 1.01)))
-
-    combined = combined.opts(width=500,height=500)
-    
-    return combined
-
-def get_calibration(clf, X_test, y_test):
-    if hasattr(clf, "predict_proba"):
-        prob_pos = clf.predict_proba(X_test)[:, 1]
-    else:  # use decision function
-        prob_pos = clf.decision_function(X_test)
-        prob_pos = (prob_pos - prob_pos.min()) / (prob_pos.max() - prob_pos.min())
-    fraction_of_positives, mean_predicted_value = calibration_curve(y_test, prob_pos, n_bins=10)
-    
-    return fraction_of_positives, mean_predicted_value
-
-def get_reliability(models, X_test, y_test):
-    cal = [get_calibration(i, X_test, y_test) for i in models]
-    labels = ['Gradient Boosting', 'Logistic Regression','Naive Bayes', 'Random Forest']
-
-    combined = (hv.Curve(cal[0],label=labels[0])*
-                hv.Curve(cal[1],label=labels[1])*
-                hv.Curve(cal[2],label=labels[2])*
-                hv.Curve(cal[3],label=labels[3])*
-                hv.Curve(np.array([0,1]),label='Perfect Calibration').opts(color='black')).\
-                relabel('Reliability Curve').opts(
-                xlabel='Predicted', ylabel='Observed', legend_position='bottom_right').\
-                redim(x=hv.Dimension('x', range=(-0.01, 1.01)),y=hv.Dimension('y', range=(-0.01, 1.01)))
-
-    combined = combined.opts(width=500,height=500)
-    
-    return combined
-
 def model_comp(models):
     labels = ['Gradient Boosting: ', 'Logistic Regression','Naive Bayes', 'Random Forest']
     predicted_y_probs = [clf.predict_proba(X_test)[:,0] for clf in models]
@@ -732,11 +637,7 @@ def model_comp(models):
 timeseries1 = get_tschart(weather, 'PRCP')
 timeseries11 = get_tschart(weather, 'TMAX')
 
-#feature_chart = get_feature_chart(models)
 sens, spec, spss = get_sens_spec(thingers)
-#rochart = get_rochart(models, X_test, y_test)
-#prchart = get_prchart(models, X_test, y_test)
-#reliability = get_reliability(models, X_test, y_test)
 x1, x2, x3, x4 = model_comp(models)
 
 new_design = blop.groupby(['WEEK']).mean()[x_fields]
@@ -916,15 +817,6 @@ def wrapped(now,
                          detectNotSpecificity = 1-np.mean(spec))
         
         return rec, CE, reasoning, decisions, CEs
-
-def human_format(num):
-    num = float('{:.3g}'.format(num))
-    magnitude = 0
-    while abs(num) >= 1000:
-        magnitude += 1
-        num /= 1000.0
-    return '{}{}'.format('{:f}'.format(num).rstrip('0').rstrip('.'), ['', 'K', 'M', 'B', 'T'][magnitude])
-
 
 @pn.depends(button.param.clicks)
 def analysis(_):
